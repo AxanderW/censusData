@@ -27,13 +27,14 @@ var scatterGroup = svg.append("g")
 
 // Initial Params
 var chosenXAxis = "poverty";
+var chosenYAxis = "noHealthInsurance";
 
 // function used for updating x-scale var upon click on axis label
 function xScale(censusData, chosenXAxis) {
   // create scales
   var xLinearScale = d3.scaleLinear()
     .domain([d3.min(censusData, d => d[chosenXAxis]) * 0.8,
-      d3.max(censusData, d => d[chosenXAxis]) * 1.2
+      d3.max(censusData, d => d[chosenXAxis]) *1.2
     ])
     .range([0, width]);
 
@@ -62,6 +63,16 @@ function renderCircles(circlesGroup, newXScale, chosenXaxis) {
 
   return circlesGroup;
 }
+
+// new labels
+function renderCircleLables(circlesLabels, newXScale, chosenXaxis) {
+
+   circlesLabels.transition()
+       .duration(1000)
+       .attr("x", d => newXScale(d[chosenXAxis]));
+
+   return circlesLabels;
+}
 // function used for updating circles group with new tooltip
 function updateToolTip(chosenXAxis, circlesGroup) {
 
@@ -72,14 +83,16 @@ function updateToolTip(chosenXAxis, circlesGroup) {
         var label = "Age (Median)";
       }
     else {
+      chosenXAxis == "income";
       var label = "Household Income (Median)";
     }
   
     var toolTip = d3.tip()
       .attr("class", "tooltip")
+      .style("position", "absolute")			 
       .offset([80, -60])
       .html(function(d) {
-        return (`${d.state}<br>`);
+        return (`${d.state}<br>Lacks Health Insurance: ${d.noHealthInsurance}`);
       });
   
     circlesGroup.call(toolTip);
@@ -145,35 +158,49 @@ d3.csv("assets/data/data_2.csv")
     .append("circle")
     .attr("cx", d => xLinearScale(d[chosenXAxis]))
     .attr("cy", d => yLinearScale(d.noHealthInsurance))
-    .attr("r", 10)
-    .attr("fill", "lightblue")
+    .attr("r", 12)
+    .attr("fill", "skyblue")
     .attr("stroke", "lightblue")
-    .attr("opacity", ".5");
+    .attr("opacity", ".7");
 
-    var circleLabelGroup = scatterGroup.selectAll("text")
+    var circleLabelGroup = scatterGroup.selectAll("tspan")
     .data(censusData)
     .enter()
     .append("text")
     .attr("x", d => xLinearScale(d[chosenXAxis]))
     .attr("y", d => yLinearScale(d.noHealthInsurance))
-    .attr("dx",-7)
-    .attr("dy",4)
     .style("font-size",9)
-   
+    .attr("fill","white")
+    .style("text-anchor", "middle")
     .text(d => d.abbr);
 
 
 
-    // Create group for  2 x- axis labels
+    // Create group for  3 x- axis labels
     var labelsGroup = scatterGroup.append("g")
-      .attr("transform", `translate(${width / 2}, ${height + 20})`);
+      .attr("transform", `translate(${width / 3}, ${height + 20})`);
     
-    var povertyPercLabel = labelsGroup.append("text")
+    var povertyLabel = labelsGroup.append("text")
     .attr("x", 0)
     .attr("y", 20)
     .attr("value", "poverty") // value to grab for event listener
     .classed("active", true)
-    .text("In Poverty (%)");
+    .text("In Poverty(%)");
+
+    var ageLabel = labelsGroup.append("text")
+    .attr("x", 0)
+    .attr("y", 40)
+    .attr("value", "age") // value to grab for event listener
+    .classed("inactive", true)
+    .text("Age (Median)");
+
+    var householdIncomeLabel = labelsGroup.append("text")
+    .attr("x", 0)
+    .attr("y", 60)
+    .attr("value", "income") // value to grab for event listener
+    .classed("inactive", true)
+    .text("Household Income (Median)");
+
 
     // append y axis
     scatterGroup.append("text")
@@ -208,6 +235,9 @@ d3.csv("assets/data/data_2.csv")
         // updates circles with new x values
         circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenXAxis);
 
+        // updates circles with new x values
+        circleLabelGroup = renderCircleLables(circleLabelGroup, xLinearScale, chosenXAxis);
+
         // updates tooltips with new info
         circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
 
@@ -216,7 +246,10 @@ d3.csv("assets/data/data_2.csv")
         ageLabel
             .classed("active", true)
             .classed("inactive", false);
-        povertyPercLabel
+        povertyLabel
+            .classed("active", false)
+            .classed("inactive", true);
+        householdIncomeLabel
             .classed("active", false)
             .classed("inactive", true);
         }
@@ -224,20 +257,23 @@ d3.csv("assets/data/data_2.csv")
         householdIncomeLabel
             .classed("active", true)
             .classed("inactive", false);
-        povertyPercLabel
-            .classed("active", false)
-            .classed("inactive", true);
-        }
-        else {
-        householdIncomeLabel
+        povertyLabel
             .classed("active", false)
             .classed("inactive", true);
         ageLabel
         .classed("active", false)
         .classed("inactive", true);
-        povertyPercLabel
-            .classed("active", true)
-            .classed("inactive", false);
+        }
+        else if (chosenXAxis == "poverty"){
+      povertyLabel
+      .classed("active", true)
+      .classed("inactive", false);
+      householdIncomeLabel
+          .classed("active", false)
+          .classed("inactive", true);
+      ageLabel
+      .classed("active", false)
+      .classed("inactive", true);
         }
     }
     });
